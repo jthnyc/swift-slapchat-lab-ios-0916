@@ -15,7 +15,93 @@ class DataStore {
     
     private init() {}
     
-    // MARK: - Core Data stack
+    var messages = [Message]()
+    
+//    var context: NSManagedObjectContext {
+//        return persistentContainer.viewContext
+//    }
+    
+    
+    func doomsdayDelete(){
+        
+       let context = self.persistentContainer.viewContext
+        let fetchRequest = NSFetchRequest<Message>(entityName: "Message")
+        do{
+         let fetchedMessages = try context.fetch(fetchRequest)
+            for message in messages {
+                context.delete(message)
+            }
+            
+        }catch {
+            
+        }
+
+        
+        saveContext()
+        
+        
+    }
+    
+    func generateTestData(){
+        // 1. declare where context is, which is in persistentcontainer.viewcontext (core data's "house") which has a property called viewcontext so we can access context. Type of ManageObjectContext.
+        let managedContext = self.persistentContainer.viewContext
+        
+        // 2A: create an entity -- to make a message object
+        /*
+        let entity = NSEntityDescription.entity(forEntityName: "Message", in: managedContext)
+        guard let unwrappedEntity = entity else { return }
+        let message1 = NSManagedObject(entity: unwrappedEntity, insertInto: managedContext) as! Message
+        */
+    
+        // 2. make a message a new way
+        let message1 = Message(context: managedContext)
+        message1.content = "Hello"
+        message1.createAt = NSDate()
+        
+        let message2 = Message(context: managedContext)
+        message2.content = "Bye"
+        message2.createAt = NSDate()
+        
+        // save it because we made a change, house renovated
+        saveContext()
+        
+        // saved but need to check if it's there -- and grab that data to use
+        fetchData()
+    
+    }
+    
+    func fetchData() {
+        let manageObjectContext = self.persistentContainer.viewContext
+        let fetchRequest = NSFetchRequest<Message>(entityName: "Message")
+
+        do {
+            let fetchedMessages = try manageObjectContext.fetch(fetchRequest)
+            let sortedMessages = fetchedMessages.sorted(by: { (messageA, messageB) -> Bool in
+                
+                if let unwrappedDateA = messageA.createAt, let unwrappedDateB = messageB.createAt {
+                    
+                    let dateA = unwrappedDateA as! Date
+                    let dateB = unwrappedDateB as! Date
+                    
+                    return dateA > dateB
+                }
+                
+                return false
+            })
+            
+            self.messages = sortedMessages
+            
+//            if sortedMessages.count == 0 {
+//                generateTestData()
+//            }
+            
+        } catch {
+            
+        }
+    
+
+    }
+    
     
     lazy var persistentContainer: NSPersistentContainer = {
         /*
